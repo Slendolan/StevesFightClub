@@ -29,7 +29,9 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
               <About>
                 <Summary>Hello world!</Summary>
               </About>
-              
+              <ModSettings>
+                <MsPerTick>1</MsPerTick>
+              </ModSettings>
               <ServerSection>
                 <ServerInitialConditions>
                     <Time>
