@@ -10,16 +10,23 @@ In the first working implementation of StevesFightClub, the agent will only use 
 
 ## Approach
 
+##### Environment
+
 <img src="img/initial_spawn.png" width="250" height="250">
 
 We started by building a world as a 13x13 enclosed arena. We spawned two zombies near the agent. Using the hit_test.py and tutorial files, the agent was able to aim at the zombies and attack. At this time, our agent was only able to attack. It was not able to move and therefore would be attacked as he stood still and fought back. 
 
-The next version of our agent include a simple Q table approach. Our current Q table update as follows:
+##### Learning Algorithm
+
+The next version of our agent included a simple Q table approach. Our current Q table update as follows:
 
 ```
 old_q = q_table[prev_s][prev_a]
 new_q = old_q + alpha * (reward + gamma * max(q_table[current_state]) - old_q)
 ```
+
+The states, which we detail below, are very general states; however, there is still some overlap between different states (i.e. if a mob is close, there might be some actions the agent should prefer to take regardless of its position).  The way the update function is now, two different states will have completely different learning, independent of each other.  We hope to improve the update function by "leaking" the well rewarded actions to other similar states, at some rate we can control.  For example, if the agent achieves a high reward for attacking when a mob is close, this high reward can be applied to other slots of the Q table that also have the mob close.  This will potentially increase the rate at which the agent can learn.
+
 ##### States
 Initially we implemented the state as the whole number x and z positions, which we obtained by truncating the float values from the player position observation provided through Malmo.  We chose to truncate the positions so that the agent would have an effectively infinite number of states to be in (i.e. x = 5.0001 and x = 5.0000 are completely different states otherwise).  The aim was to have the agent learn what to do based on its position in the arena.  However, in practice the number of states were much too high.  The agent would be travelling through different positions in the arena every iteration of the learning algorithm, effectively making learning general policies impossible.  
 
