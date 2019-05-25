@@ -17,6 +17,9 @@ import random
 import math
 import logging
 
+TICKS = 10 #how many ms each game tick is
+SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
+
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
 else:
@@ -30,7 +33,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <Summary>Hello world!</Summary>
               </About>
               <ModSettings>
-                <MsPerTick>1</MsPerTick>
+              <MsPerTick>{tick}</MsPerTick>
               </ModSettings>
               <ServerSection>
                 <ServerInitialConditions>
@@ -78,6 +81,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <Reward description="quit" reward="1000" />
                     </RewardForMissionEnd>
                     
+                    
                     <ObservationFromNearbyEntities>
                         <Range name="entities" xrange="50" yrange="2" zrange="50" update_frequency="1"/>
                     </ObservationFromNearbyEntities>
@@ -85,7 +89,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ContinuousMovementCommands turnSpeedDegs="720"/>
                 </AgentHandlers>
               </AgentSection>
-            </Mission>'''
+            </Mission>'''.format(tick=TICKS)
 
 
 class Agent(object):
@@ -110,12 +114,13 @@ class Agent(object):
     
     def updateQTable( self, reward, current_state ):
         old_q = self.q_table[self.prev_s][self.prev_a]
-        new_q = reward
+        new_q = old_q + self.alpha * (reward + self.gamma * max(self.q_table[current_state]) - old_q)
+
         self.q_table[self.prev_s][self.prev_a] = new_q
     
     def updateQTableFromTerminatingState( self, reward ):
         old_q = self.q_table[self.prev_s][self.prev_a]
-        new_q = reward
+        new_q = old_q + self.alpha * (reward + self.gamma * max(self.q_table[self.prev_s]) - old_q)
         self.q_table[self.prev_s][self.prev_a] = new_q
     
     def look(self, ob):
@@ -225,7 +230,7 @@ class Agent(object):
             if is_first_action:
                 # Wait until have received a valid observation
                 while True:
-                    time.sleep(0.1)
+                    time.sleep(SLEEP)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -240,7 +245,7 @@ class Agent(object):
             else:
                 # Wait for non-zero reward
                 while world_state.is_mission_running and current_r == 0:
-                    time.sleep(0.1)
+                    time.sleep(SLEEP)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -248,7 +253,7 @@ class Agent(object):
                         current_r += reward.getValue()
                 # Allow time to stabilise after action
                 while True:
-                    time.sleep(0.1)
+                    time.sleep(SLEEP)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -291,7 +296,7 @@ if __name__ == '__main__':
 
     # Attempt to start a mission:
     max_retries = 3
-    num_repeats = 5
+    num_repeats = 200
     cumulative_rewards = []
     for i in range(num_repeats):
 
