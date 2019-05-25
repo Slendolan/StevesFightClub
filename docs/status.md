@@ -20,14 +20,25 @@ The next version of our agent include a simple Q table approach. Our current Q t
 old_q = q_table[prev_s][prev_a]
 new_q = old_q + alpha * (reward + gamma * max(q_table[current_state]) - old_q)
 ```
+##### States
+Initially we implemented the state as the whole number x and z positions, which we obtained by truncating the float values from the player position observation provided through Malmo.  We chose to truncate the positions so that the agent would have an effectively infinite number of states to be in (i.e. x = 5.0001 and x = 5.0000 are completely different states otherwise).  The aim was to have the agent learn what to do based on its position in the arena.  However, in practice the number of states were much too high.  The agent would be travelling through different positions in the arena every iteration of the learning algorithm, effectively making learning general policies impossible.  
 
-The state contains the agent’s position. 
+
+Therefore we decided to simplify the number of states, making it depend on the nearness of the enemies.  The logic is that, because of the random actions that both the agent and the mobs can take, the difference between being in say position (7,7) and (7,8) is almost nonexistent. Instead, if the agent learns what to do based on how near or far enemies are, it will much more likely end up learning to kite back and forth.  In fact, to test the simplified state we made the state simply between near ( < 3 blocks away), or far (>= 3 blocks away).  Running this state heuristic resulted in an agent that would learn when and how often to attack as it approached the end of its iteration cycles.
+
+This leaves the question of how the size and shape of the arena can come into play.  Based on the above mentioned state heuristic, there is no way for the agent to differentiate between fighting mobs in the middle of the arena and in a corner of the arena (except for if there is a clear pattern of movement that the mobs will take, which we found no evidence of).  We already tried to make the state based on the agent's position in the arena, so that is most likely not going to work.  We theorize it would be better to instead differentiate between the states of not being surrounded by walls, having a wall nearby, and having a corner nearby.  This can be accomplished by using information about the size and shape of the arena.  For our experimentation, we use a 13x13 arena.  If we know the length and width, as well as the general shape of the arena (rectangular), we can create a simple function that takes the agent's position and creates a state based on whether it is in a corner tile, a wall tile, or any other tile.  While the agent's state is not implemented this way at the time of writing this, it is definitely something to look to implement correctly as a next step in this project.
+
+##### Actions
 This version includes the following actions:
 - attack
 - move forward
 - move left
 - move right
 - move back
+
+Here we have all the actions that the agent can take.  The possible actions are all weighted equally in the beginning.  As you can see, movement is represented more than attacking (4 movement options vs 1 attack option).  If we see fit, this can be modified through several ways.  We can introduce weighting in the random selection of actions, or we could introduce more copies of attack options in the action pool.  Of course, this would mostly effect the first few iterations of the agent, because the agent will eventually start weighing each action based on the results it gives.
+
+##### Rewards
 
 The rewards include:
 - -1000 for agent death
@@ -36,7 +47,7 @@ The rewards include:
 
 The agent has a 0.3 chance of choosing a random action and a 0.70 chance of choosing an action from the Q table. We reduce the epsilon over time. As it approaches 200 episodes, the epsilon will reduce to 0. Below shows the output of the random and q table actions chosen.
 
-We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a +1000 reward if the agent defeats all the enemies and completes the mission early and  a -5 reward if the agent runs out of mission time. We need more testing in order to evaluate this approach.
+We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a +1000 reward if the agent defeats all the enemies and completes the mission early and  a -5 reward if the agent runs out of mission time. We need more testing in order to evaluate this approach.  Another thing that we are considering is to weigh the penalties for taking different actions differently. For example, we could change the reward for taking an attack action to -10 or even -50 instead of the baseline -1 we already have.  Logically this would make the agent more reserved about repeatedly attacking the air.  We hope to not simply make an agent that only presses attack, and this could be a step in the right direction.
 
 
 ## Evaluation
@@ -51,7 +62,7 @@ The graphs indicate the total rewards of each episode. The x-axis represents the
 
 <img src="img/challenge_spawn.png" width="250" height="250">
 
-Once the zombie spawn positions changed, the rewards do not improve over the course of 200 episodes. The enemies are placed in front and behind the agent where both enemies are equidistant to the agent. The agent will have difficulty locking on to one enemy. This is confirmed by observing the agent over several episodes. It would spin repeatedly and switch between the two targets. This results in the agent occasionally missing attacks, taking damage, and consequently dying.
+Once the zombie spawn positions changed, the rewards do not improve over the course of 200 episodes. The enemies are placed in front and behind the agent where both enemies are equidistant to the agent. The agent will have difficulty locking on to one enemy. This is confirmed by observing the agent over several episodes. It would spin repeatedly and switch between the two targets. This results in the agent occasionally missing attacks, taking damage, and consequently dying. 
 
 
 ## Remaining Goals and Challenges
