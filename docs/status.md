@@ -10,11 +10,33 @@ In the first working implementation of StevesFightClub, the agent will only use 
 
 ## Approach
 
+We started by building a world as a 13x13 enclosed arena. We spawned two zombies near the agent. Using the hit_test.py and tutorial files, the agent was able to aim at the zombies and attack. At this time, our agent was only able to attack. It was not able to move and therefore would repeated attacked as he stood still and fought back. 
 
+The next version of our agent include a simple Q table approach. Our current Q table update is as follows:
+
+	``old_q = old_q + alpha * reward_from_action_in_current_state``
+
+The state contains the agent’s position. 
+This version includes the following actions:
+	- attack
+	- move forward
+	- move left
+	- move right
+	- move back
+The rewards include:
+	- -1000 for agent death
+	- 100 for damaging an enemy
+	- -1 for any action
+
+The agent has a 0.05 chance of choosing a random action and a 0.95 chance of choosing an action from the Q table. Below shows the output of the random and q table actions chosen.
+
+
+
+We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a 1000 reward if the agent defeats all the enemies and completes the mission early and -5 if the agent runs out of mission time. We need more testing in order to evaluate this approach.
 
 ## Evaluation
 
-
+Before the inclusion of Q table, the agent would repeated attack with sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attack the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved with by taking in more state information.
 
 ## Remaining Goals and Challenges
 
