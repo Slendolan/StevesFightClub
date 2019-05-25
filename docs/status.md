@@ -12,33 +12,36 @@ In the first working implementation of StevesFightClub, the agent will only use 
 
 ![](img/initial_spawn.png = 250x250)
 
-We started by building a world as a 13x13 enclosed arena. We spawned two zombies near the agent. Using the hit_test.py and tutorial files, the agent was able to aim at the zombies and attack. At this time, our agent was only able to attack. It was not able to move and therefore would repeated attacked as he stood still and fought back. 
+We started by building a world as a 13x13 enclosed arena. We spawned two zombies near the agent. Using the hit_test.py and tutorial files, the agent was able to aim at the zombies and attack. At this time, our agent was only able to attack. It was not able to move and therefore would be attacked as he stood still and fought back. 
 
-The next version of our agent include a simple Q table approach. Our current Q table update is as follows:
+The next version of our agent include a simple Q table approach. Our current Q table update as follows:
 
-	```old_q = q_table[prev_s][prev_a]
-    new_q = old_q + alpha * (reward + gamma * max(q_table[current_state]) - old_q)```
+```
+old_q = q_table[prev_s][prev_a]
+new_q = old_q + alpha * (reward + gamma * max(q_table[current_state]) - old_q)
+```
 
 The state contains the agent’s position. 
 This version includes the following actions:
-	* attack
-	* move forward
-	* move left
-	* move right
-	* move back
+- attack
+- move forward
+- move left
+- move right
+- move back
+
 The rewards include:
-	* -1000 for agent death
-	* 100 for damaging an enemy
-	* -1 for any action
+- -1000 for agent death
+- +100 for damaging an enemy
+- -1 for any action
 
 The agent has a 0.3 chance of choosing a random action and a 0.70 chance of choosing an action from the Q table. We reduce the epsilon over time. As it approaches 200 episodes, the epsilon will reduce to 0. Below shows the output of the random and q table actions chosen.
 
-We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a 1000 reward if the agent defeats all the enemies and completes the mission early and -5 if the agent runs out of mission time. We need more testing in order to evaluate this approach.
+We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a +1000 reward if the agent defeats all the enemies and completes the mission early and  a -5 reward if the agent runs out of mission time. We need more testing in order to evaluate this approach.
 
 
 ## Evaluation
 
-Before the inclusion of Q table, the agent would repeated attack with sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attack the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved with by taking in more state information.
+Before the inclusion of Q-learning, the agent would repeatedly attack with a sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attacking the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved by taking into consideration more state information.
 
 ![](img/result_graphs.png)
 
@@ -46,12 +49,14 @@ The graphs indicate the total rewards of each episode. The x-axis represents the
 
 ![](img/challenge_spawn = 250x250)
 
-Once the zombie spawn positions changed, the rewards do not improve over the course of 200 episodes. An enemy is placed in front and behind the agent where both enemies are equidistant to the agent. Therefore the agent is confused. This is confirmed by observing the agent over several episodes. It would spin repeatedly and switch between target. This results in the agent occasionally missing attacks and consequently dying.
+Once the zombie spawn positions changed, the rewards do not improve over the course of 200 episodes. The enemies are placed in front and behind the agent where both enemies are equidistant to the agent. The agent will have difficulty locking on to one enemy. This is confirmed by observing the agent over several episodes. It would spin repeatedly and switch between the two targets. This results in the agent occasionally missing attacks, taking damage, and consequently dying.
 
 
 ## Remaining Goals and Challenges
 
-A wider variety of enemies, a baseline to compare performance, and more weapons such as bows, arrows, and shields
+- [ ] A wider variety of enemies
+- [ ] A baseline to compare performance
+- [ ] More weapons such as bows, arrows, and shields
 
 
 ![](img/corner_challenge.png = 250x250)
