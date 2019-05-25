@@ -3,6 +3,8 @@ layout: default
 title:  Home
 ---
 
+<link rel="stylesheet" href="css/custom.css">
+
 <img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" id="title" width="1000" height="300">
 
 ## Project Summary
@@ -15,7 +17,7 @@ StevesFightClub is a Q-Learning reinforcement learning project that aims to crea
 
 ## Project Resources
 
-*<a href="https://github.com/Slendolan/StevesFightClub">Project Source Code</a>
+* <a href="https://github.com/Slendolan/StevesFightClub">Project Source Code</a>
 
-*<a href="https://github.com/Microsoft/malmo">Microsoft Malmo</a>
+* <a href="https://github.com/Microsoft/malmo">Microsoft Malmo</a>
 
