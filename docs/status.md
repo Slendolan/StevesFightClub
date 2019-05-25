@@ -14,6 +14,7 @@ In the first working implementation of StevesFightClub, the agent will only use 
 
 ## Evaluation
 
+Before the inclusion of Q table, the agent would repeated attack with sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attack the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved with by taking in more state information.
 
 
 ## Remaining Goals and Challenges
