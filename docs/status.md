@@ -10,7 +10,7 @@ In the first working implementation of StevesFightClub, the agent will only use 
 
 ## Approach
 
-![](img/initial_spawn.png = 250x250)
+<img src="img/initial_spawn.png" width="250" height="250">
 
 We started by building a world as a 13x13 enclosed arena. We spawned two zombies near the agent. Using the hit_test.py and tutorial files, the agent was able to aim at the zombies and attack. At this time, our agent was only able to attack. It was not able to move and therefore would be attacked as he stood still and fought back. 
 
@@ -43,11 +43,11 @@ We are currently experimenting with rewarding the agent more for completing task
 
 Before the inclusion of Q-learning, the agent would repeatedly attack with a sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attacking the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved by taking into consideration more state information.
 
-![](img/result_graphs.png)
+<img src="img/result_graphs.png">
 
 The graphs indicate the total rewards of each episode. The x-axis represents the episode and the y-axis represents the reward of that episode. The left graph is based on the map generated in our initial approach. Observe that the reward increases as the number of episode increases. This is most likely due to the fact that the agent is taking Q table moves more than random moves as it approaches 200 episodes. On the other hand, the right graph is a newly generated map shown below:
 
-![](img/challenge_spawn = 250x250)
+<img src="img/challenge_spawn.png" width="250" height="250">
 
 Once the zombie spawn positions changed, the rewards do not improve over the course of 200 episodes. The enemies are placed in front and behind the agent where both enemies are equidistant to the agent. The agent will have difficulty locking on to one enemy. This is confirmed by observing the agent over several episodes. It would spin repeatedly and switch between the two targets. This results in the agent occasionally missing attacks, taking damage, and consequently dying.
 
@@ -59,7 +59,7 @@ Once the zombie spawn positions changed, the rewards do not improve over the cou
 - [ ] More weapons such as bows, arrows, and shields
 
 
-![](img/corner_challenge.png = 250x250)
+<img src="img/corner_challenge.png" width="250" height="250">
 
 One of the challenges encountered was when the agent backed itself into the corner of the arena and was surrounded by enemies. The agent does not have anyway of knowing the surrounding blocks, and this situation usually led to the agent's death. 
 A solution could be to increase the arena size, but this may result in the agent running away to avoid damage/death. We could implement a way for the agent to find out about its surroundings so when it retreats, the agent will learn that retreating into a corner can lead to a bad reward.
