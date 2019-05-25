@@ -36,7 +36,6 @@ Therefore we decided to simplify the number of states, making it depend on the n
 This leaves the question of how the size and shape of the arena can come into play.  Based on the above mentioned state heuristic, there is no way for the agent to differentiate between fighting mobs in the middle of the arena and in a corner of the arena (except for if there is a clear pattern of movement that the mobs will take, which we found no evidence of).  We already tried to make the state based on the agent's position in the arena, so that is most likely not going to work.  We theorize it would be better to instead differentiate between the states of not being surrounded by walls, having a wall nearby, and having a corner nearby.  This can be accomplished by using information about the size and shape of the arena.  For our experimentation, we use a 13x13 arena.  If we know the length and width, as well as the general shape of the arena (rectangular), we can create a simple function that takes the agent's position and creates a state based on whether it is in a corner tile, a wall tile, or any other tile.  While the agent's state is not implemented this way at the time of writing this, it is definitely something to look to implement correctly as a next step in this project.
 
 ##### Actions
-This version includes the following actions:
 - attack
 - move forward
 - move left
@@ -46,8 +45,6 @@ This version includes the following actions:
 Here we have all the actions that the agent can take.  The possible actions are all weighted equally in the beginning.  As you can see, movement is represented more than attacking (4 movement options vs 1 attack option).  If we see fit, this can be modified through several ways.  We can introduce weighting in the random selection of actions, or we could introduce more copies of attack options in the action pool.  Of course, this would mostly effect the first few iterations of the agent, because the agent will eventually start weighing each action based on the results it gives.
 
 ##### Rewards
-
-The rewards include:
 - -1000 for agent death
 - +100 for damaging an enemy
 - -1 for any action
@@ -59,13 +56,13 @@ We are currently experimenting with rewarding the agent more for completing task
 
 ## Evaluation
 
-Before the inclusion of Q-learning, the agent would repeatedly attack with a sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attacking the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved by taking into consideration more state information.
+Before the inclusion of Q-learning, the agent would repeatedly attack with a sword even when the enemies were not in range. However, with the Q table, the agent was strategically attacking when the enemies were in attackable range. The agent was quickly able to learn this after a couple iterations. The agent would also prioritize on attacking the closest enemy. The agent would choose the option to attack when there is an opportunity, so prioritizing the closest enemy would most likely provide it with the reward of damaging the enemy. The movement of the agent is still quite sporadic. Hopefully, this will be improved by taking into consideration better state information.
 
 
 
-<img src="img/results_graphs.png">
+<img src="img/results_graphs.png" width="1000">
 
-The graphs indicate the total rewards of each episode. The x-axis represents the episode and the y-axis represents the reward of that episode. The left graph is based on the map generated in our initial approach. Observe that the reward increases as the number of episode increases. This is most likely due to the fact that the agent is taking Q table moves more than random moves as it approaches 200 episodes. On the other hand, the right graph is a newly generated map shown below:
+The graphs indicate the total rewards of each episode. The x-axis represents the episode and the y-axis represents the reward of that episode. The right graph is based on the map generated in our initial approach. Observe that the reward increases as the number of episode increases. This is most likely due to the fact that the agent is taking Q table moves more than random moves as it approaches 200 episodes. On the other hand, the left graph is a newly generated map shown below:
 
 <img src="img/challenge_spawn.png" width="250" height="250">
 
