@@ -19,6 +19,8 @@ import logging
 
 TICKS = 10 #how many ms each game tick is
 SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
+NEAR = 3 #arbitrary number to be adjusted
+NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() calc
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -93,10 +95,11 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 
 
 class Agent(object):
-    def __init__(self, actions=[], epsilon=0.05, alpha=0.3, gamma=1.0):
+    def __init__(self, actions=[], epsilon=0.3, alpha=0.3, gamma=1.0, iterations=200):
         self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
+        self.delta_eps = epsilon / iterations # goes from high chance of random action -> 0 chance as time progresses
         #self.training = True
         
         self.logger = logging.getLogger(__name__)
@@ -146,12 +149,15 @@ class Agent(object):
             x_pull = 0
             z_pull = 0
             i = 0
+            ob["nearest_mob"] = 100000
             for e in entities:
                 i += 1
                 if e["name"] in mobs:
                     dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
                     x_pull += (e["x"] - self_x)/dist
                     z_pull += (e["z"] - self_z)/dist
+                    #Attaching nearest mob calculation to the look calculation for simplicity
+                    ob["nearest_mob"] = min(ob["nearest_mob"], dist)
             # Determine the direction we need to turn:
             yaw = -180 * math.atan2(x_pull, z_pull) / math.pi
             difference = yaw - current_yaw;
@@ -171,6 +177,23 @@ class Agent(object):
                     y += 1
             if y == 0:    
                 agent_host.sendCommand("quit")
+
+    def adjust_dist_granularity(self, dist):
+        #if the nearest mob is closer than some arbitrary distance, log that as one state, otherwise use another state
+        if dist < NEAR:
+            return 0
+        else:
+             return 1
+    
+
+    def calc_state(self, obs):
+        nearest = 10000
+        xPos = int(obs[u'XPos'])
+        zPos = int(obs[u'ZPos'])
+        if "nearest_mob" in obs.keys():
+            nearest = self.adjust_dist_granularity(obs["nearest_mob"])
+    #return "{}:{}:{}".format(xPos, zPos, nearest)
+        return "{}".format(nearest)
     
     def act(self, world_state, agent_host, current_r ):
         """take 1 action in response to the current world state"""
@@ -178,7 +201,7 @@ class Agent(object):
         obs = json.loads(obs_text) # most recent observation
         self.logger.debug(obs)
         
-        current_s = "%d:%d" % (int(obs[u'XPos']), int(obs[u'ZPos']))
+        current_s = self.calc_state(obs)
         self.logger.debug("State: %s (x = %.2f, z = %.2f)" % (current_s, float(obs[u'XPos']), float(obs[u'ZPos'])))
         if current_s not in self.q_table:
             self.q_table[current_s] = ([0] * len(self.actions))
@@ -222,6 +245,7 @@ class Agent(object):
         self.prev_s = None
         self.prev_a = None
         is_first_action = True
+        self.epsilon -= self.delta_eps
         
         # Main loop:
         world_state = agent_host.getWorldState()
@@ -291,12 +315,13 @@ if __name__ == '__main__':
         exit(0)
 
     n = 1
-    agent = Agent()
+    num_repeats = 200
+    agent = Agent(iterations = num_repeats)
     my_mission = MalmoPython.MissionSpec(missionXML, True)
 
     # Attempt to start a mission:
     max_retries = 3
-    num_repeats = 200
+    
     cumulative_rewards = []
     for i in range(num_repeats):
 
