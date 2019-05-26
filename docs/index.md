@@ -13,12 +13,14 @@ StevesFightClub is a Q-Learning reinforcement learning project that aims to crea
 
 ## Project Images
 
-<img src="img/screenshot1" width="720" height="360">
+<img src="img/screenshot1.png" width="720" height="360">
 
-<img src="img/screenshot2" width="720" height="360">
+<img src="img/screenshot2.png" width="720" height="360">
+
 Here is our agent stuck in corner and hugged to death. :blush:
 
-<img src="img/screenshot3" width="720" height="360">
+<img src="img/screenshot3.png" width="720" height="360">
+
 Here is our agent trying to escape the arena.
 
 ## Project Resources
