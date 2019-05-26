@@ -5,7 +5,7 @@ title:  Home
 
 <link rel="stylesheet" href="css/custom.css">
 
-<img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" id="title" width="1150" height="350">
+<img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" id="title" width="1120" height="380">
 
 ## Project Summary
 
@@ -17,7 +17,7 @@ StevesFightClub is a Q-Learning reinforcement learning project that aims to crea
 
 <img src="img/screenshot2.png" width="720" height="360">
 
-Here is our agent stuck in corner and hugged to death. :blush:
+Here is our agent stuck in corner and hugged to death.
 
 <img src="img/screenshot3.png" width="720" height="360">
 
