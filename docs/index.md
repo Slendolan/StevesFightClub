@@ -5,7 +5,7 @@ title:  Home
 
 <link rel="stylesheet" href="css/custom.css">
 
-<img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" id="title" width="1120" height="380">
+<img src="img/title.jpg" id="title" width="1120" height="380">
 
 ## Project Summary
 
