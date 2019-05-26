@@ -17,10 +17,16 @@ import random
 import math
 import logging
 
+RECORDING = True
+RECORDING_ITERATIONS = 10 #slow down a segment every x segments
 TICKS = 10 #how many ms each game tick is
+RECORDING_TICKS = 80 #slows down the game time if we need to record a slower segment
 SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
+RECORDING_SLEEP = RECORDING_TICKS * 0.005
 NEAR = 3 #arbitrary number to be adjusted
 NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() calc
+
+recording_directory = "records/"
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -28,7 +34,7 @@ else:
     import functools
     print = functools.partial(print, flush=True)
 
-missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
             
               <About>
@@ -82,6 +88,7 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <Reward description="out_of_time" reward="-5" />
                         <Reward description="quit" reward="1000" />
                     </RewardForMissionEnd>
+                    {video}
                     
                     
                     <ObservationFromNearbyEntities>
@@ -91,7 +98,9 @@ missionXML='''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                   <ContinuousMovementCommands turnSpeedDegs="720"/>
                 </AgentHandlers>
               </AgentSection>
-            </Mission>'''.format(tick=TICKS)
+            </Mission>'''
+missionXML = missionBaseXML.format(tick=TICKS, video='')
+recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='<VideoProducer><Width>1200</Width><Height>720</Height></VideoProducer>')
 
 
 class Agent(object):
@@ -246,6 +255,7 @@ class Agent(object):
         self.prev_a = None
         is_first_action = True
         self.epsilon -= self.delta_eps
+        agent_sleep = RECORDING_SLEEP if self.recording else SLEEP
         
         # Main loop:
         world_state = agent_host.getWorldState()
@@ -254,7 +264,7 @@ class Agent(object):
             if is_first_action:
                 # Wait until have received a valid observation
                 while True:
-                    time.sleep(SLEEP)
+                    time.sleep(agent_sleep)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -269,7 +279,7 @@ class Agent(object):
             else:
                 # Wait for non-zero reward
                 while world_state.is_mission_running and current_r == 0:
-                    time.sleep(SLEEP)
+                    time.sleep(agent_sleep)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -277,7 +287,7 @@ class Agent(object):
                         current_r += reward.getValue()
                 # Allow time to stabilise after action
                 while True:
-                    time.sleep(SLEEP)
+                    time.sleep(agent_sleep)
                     world_state = agent_host.getWorldState()
                     for error in world_state.errors:
                         self.logger.error("Error: %s" % error.text)
@@ -318,6 +328,7 @@ if __name__ == '__main__':
     num_repeats = 200
     agent = Agent(iterations = num_repeats)
     my_mission = MalmoPython.MissionSpec(missionXML, True)
+    my_recording_mission = MalmoPython.MissionSpec(recordingXML, True)
 
     # Attempt to start a mission:
     max_retries = 3
@@ -325,10 +336,18 @@ if __name__ == '__main__':
     cumulative_rewards = []
     for i in range(num_repeats):
 
-        my_mission_record = MalmoPython.MissionRecordSpec()
+        
         for retry in range(max_retries):
             try:
-                agent_host.startMission( my_mission, my_mission_record )
+                if RECORDING and (i % RECORDING_ITERATIONS == 0):
+                    my_mission_record = MalmoPython.MissionRecordSpec("recording_" + str(i) + ".tgz")
+                    my_mission_record.recordMP4(60, 8000000)
+                    agent.recording = True
+                    agent_host.startMission( my_recording_mission, my_mission_record )
+                else:
+                    agent.recording = False
+                    my_mission_record = MalmoPython.MissionRecordSpec()
+                    agent_host.startMission( my_mission, my_mission_record )
                 break
             except RuntimeError as e:
                 if retry == max_retries - 1:
