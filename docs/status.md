@@ -7,6 +7,9 @@ title: Status
 
 The goal of StevesFightClub is to create an agent that is able to fight and defeat all sorts of Minecraft mobs. In the first working implementation, the agent only uses a sword to fight at most two zombies at a time. The agent can attack, strafe left/right, walk forwards/backwards, and turn around. The agent currently takes into consideration nearby enemies, but future implementations could consider the type and health of the enemy.
 
+**Video Link**
+
+[![Video Link](http://img.youtube.com/vi/vt0yqX2nMwc/0.jpg)](http://www.youtube.com/watch?v=vt0yqX2nMwc)
 
 ## Approach
 
@@ -23,7 +26,12 @@ The next version of our agent included a simple Q table approach. Our current Q 
 ```
 old_q = q_table[prev_s][prev_a]
 new_q = old_q + alpha * (reward + gamma * max(q_table[current_state]) - old_q)
+
+alpha is the learning rate
+gamma is the discount factor
 ```
+
+
 
 The states, which we detail below, are very general states; however, there is still some overlap between different states (i.e. if a mob is close, there might be some actions the agent should prefer to take regardless of its position).  The way the update function is now, two different states will have completely different learning, independent of each other.  We hope to improve the update function by "leaking" the well rewarded actions to other similar states, at some rate we can control.  For example, if the agent achieves a high reward for attacking when a mob is close, this high reward can be applied to other slots of the Q table that also have the mob close.  This will potentially increase the rate at which the agent can learn.
 
@@ -87,3 +95,6 @@ A solution could be to increase the arena size, but this may result in the agent
 ## Resources Used
 
 Malmo Python examples: the tutorials, tabular_q_learning.py, hit_test.py, and mob_fun.py
+
+Q-learning Wikipedia page
+
