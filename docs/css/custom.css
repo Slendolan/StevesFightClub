@@ -37,3 +37,8 @@ body > .container {
 code {
   font-size: 80%;
 }
+
+#title {
+  text-align: center;
+  display:block;
+}

@@ -3,15 +3,21 @@ layout: default
 title:  Home
 ---
 
-<img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" style="display: block; margin: auto;" />
+<link rel="stylesheet" href="css/custom.css">
 
-StevesFightClub is a project that aims to create an intelligent agent that is able to fight all sorts of mob monsters in Minecraft. 
+<img src="https://www.windowscentral.com/sites/wpcentral.com/files/styles/xlarge/public/field/image/2016/09/minecraft-main.jpg" id="title" width="1100" height="400">
 
-Source code: https://github.com/Slendolan/StevesFightClub
+## Project Summary
 
-Reports:
+StevesFightClub is a Q-Learning reinforcement learning project that aims to create an intelligent agent (Steve) in minecraft. The agent is thrown in an enclosed arena and must learn to survive and fight a horde of various enemies including zombies, skeletons, etc. The agent is tested on its ability to inflict damage and strategically navigate around monsters.
 
-- [Proposal](proposal.html)
-- [Status](status.html)
-- [Final](final.html)
+## Project Screenshots
+
+
+
+## Project Resources
+
+* <a href="https://github.com/Slendolan/StevesFightClub">Project Source Code</a>
+
+* <a href="https://github.com/Microsoft/malmo">Microsoft Malmo</a>
 
