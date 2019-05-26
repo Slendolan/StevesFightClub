@@ -51,7 +51,7 @@ Here we have all the actions that the agent can take.  The possible actions are 
 
 The agent begins with a 0.3 chance of choosing a random action and a 0.7 chance of choosing an action from the Q table. We reduce the epsilon over time. As it approaches 200 episodes, the epsilon will reduce to 0. Below shows the output of the random and q table actions chosen.
 
-
+<img src="img/actions.png" width="250" height="200">
 
 We are currently experimenting with rewarding the agent more for completing tasks faster. For example, we can include a +1000 reward if the agent defeats all the enemies and completes the mission early and  a -5 reward if the agent runs out of mission time. We need more testing in order to evaluate this approach.  Another thing that we are considering is to weigh the penalties for taking different actions differently. For example, we could change the reward for taking an attack action to -10 or even -50 instead of the baseline -1 we already have.  Logically this would make the agent more reserved about repeatedly attacking the air.  We hope to not simply make an agent that only presses attack, and this could be a step in the right direction.
 
