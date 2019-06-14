@@ -23,10 +23,15 @@ TICKS = 10 #how many ms each game tick is
 RECORDING_TICKS = 80 #slows down the game time if we need to record a slower segment
 SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
 RECORDING_SLEEP = RECORDING_TICKS * 0.005
-NEAR = 3 #arbitrary number to be adjusted
+NEAR = 1 #arbitrary number to be adjusted
 NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() calc
+MIDDLE = 2
+MIDDLE *= MIDDLE
+ATK_PENALTY = -2
 
 recording_directory = "records/"
+mobs = ["Zombie", "Pig", "Cow"]
+
 
 if sys.version_info[0] == 2:
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # flush print output immediately
@@ -63,7 +68,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <DrawEntity x="2" y="7" z="5" type="Zombie"/>
                     </DrawingDecorator>
                   
-                  <ServerQuitFromTimeUp timeLimitMs="25000"/>
+                  <ServerQuitFromTimeUp timeLimitMs="50000"/>
                   <ServerQuitWhenAnyAgentFinishes/>
                 </ServerHandlers>
               </ServerSection>
@@ -79,6 +84,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 
                 <AgentHandlers>
                     <ObservationFromRay/>
+                    <ObservationFromDiscreteCell/>
                     <RewardForDamagingEntity>
                         <Mob type="Zombie" reward="100"/>
                     </RewardForDamagingEntity>
@@ -100,11 +106,25 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
               </AgentSection>
             </Mission>'''
 missionXML = missionBaseXML.format(tick=TICKS, video='')
-recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='<VideoProducer><Width>1200</Width><Height>720</Height></VideoProducer>')
+#recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='<VideoProducer><Width>1200</Width><Height>720</Height></VideoProducer>')
+recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='') #choosing to go with screen recording because malmo recording does weird things, like dropping the sword,
+                                                                     #which doesn't reflect what actually happened
+#positions within the state tuple
+
+ENEMY_DIST = 0
+WALL = 1
+
+#wall constants
+WALL_NONE = 0
+WALL_CORNER = 1
+WALL_BACK = 2
+WALL_FRONT = 3
+WALL_LEFT = 4
+WALL_RIGHT = 5
 
 
 class Agent(object):
-    def __init__(self, actions=[], epsilon=0.3, alpha=0.3, gamma=1.0, iterations=200):
+    def __init__(self, actions=[], epsilon=1, alpha=0.3, gamma=1.0, iterations=200):
         self.epsilon = epsilon
         self.alpha = alpha
         self.gamma = gamma
@@ -119,7 +139,7 @@ class Agent(object):
         self.logger.handlers = []
         self.logger.addHandler(logging.StreamHandler(sys.stdout))
         
-        self.actions = ["attack 1", "move -0.5", "move 0.5", "strafe -0.5", "strafe 0.5"]
+        self.actions = ["attack 1", "attack 1", "attack 1", "move -0.5", "move 0.5", "strafe -0.5", "strafe 0.5"]
         self.q_table = {}
         self.canvas = None
         self.root = None
@@ -147,18 +167,24 @@ class Agent(object):
         # Get our position/orientation:
         if u'Yaw' in ob:
             current_yaw = ob[u'Yaw']
+        else: 
+            return
         if u'XPos' in ob:
             self_x = ob[u'XPos']
+        else:
+            return
         if u'ZPos' in ob:
             self_z = ob[u'ZPos']
+        else:
+            return
         
         # Use the nearby-entities observation to decide which way to move:
         if u'entities' in ob:
             entities = ob["entities"]
             x_pull = 0
             z_pull = 0
-            i = 0
             ob["nearest_mob"] = 100000
+            """
             for e in entities:
                 i += 1
                 if e["name"] in mobs:
@@ -167,6 +193,26 @@ class Agent(object):
                     z_pull += (e["z"] - self_z)/dist
                     #Attaching nearest mob calculation to the look calculation for simplicity
                     ob["nearest_mob"] = min(ob["nearest_mob"], dist)
+            """
+            ## trying turning to only the nearest enemy
+            nearest = -1
+            nearest_dist = 10000
+            for i in range(len(entities)):
+                e = entities[i]
+                if e["name"] in mobs:
+                    dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
+                    if dist < nearest_dist:
+                        nearest = i
+                        nearest_dist = dist
+                        ob["nearest_mob"] = dist
+            if nearest == -1:
+                return
+
+            e = entities[nearest]
+            x_pull = (e["x"] - self_x)/nearest_dist
+            z_pull = (e["z"] - self_z)/nearest_dist
+
+
             # Determine the direction we need to turn:
             yaw = -180 * math.atan2(x_pull, z_pull) / math.pi
             difference = yaw - current_yaw;
@@ -191,27 +237,79 @@ class Agent(object):
         #if the nearest mob is closer than some arbitrary distance, log that as one state, otherwise use another state
         if dist < NEAR:
             return 0
-        else:
+        elif dist < MIDDLE:
              return 1
+        return 2    
+
+    def pos_string_to_tuple(self, pos):
+        #pos format: (x,z)
+        x = ""
+        z = ""
+        i=1
+        while(pos[i] != ','):
+            x += pos[i]
+            i += 1
+        i += 1
+        while(pos[i] != ')'):
+            z += pos[i]
+            i += 1
+        return (int(x), int(z))
+
+
+
+    def get_wall_position(self, obs):
+        #13 by 13 arena, we use blocks, range is 6 to -6 for both x and z blocks
+        to_remove = [',', '(', ')']
+        x_pos, z_pos = self.pos_string_to_tuple(obs['cell'])
+        x_pos = abs(x_pos) #we can set these to absolute value because we have a 0,0 centered arena with walls of the same absolute value position (6)
+        z_pos = abs(z_pos)
+
+        #for a wall or corner at least one of these values must be 6, the edge of the arena
+        if (x_pos != 6 and
+            z_pos != 6):
+            return WALL_NONE
+        #at this point we know at least 1 of x and z is 6 or -6
+        #all the corners are (6,6) (6,-6) (-6, 6) (-6, -6)
+        #therefore at this point a corner will have equivalent abs(x) and abs(z)
+        if (x_pos == z_pos):
+            return WALL_CORNER
+        #otherwise it's just a wall, determine which direction the wall is based on facing direction
+
+        return WALL_FRONT
+
     
 
     def calc_state(self, obs):
-        nearest = 10000
+        #we'll use a tuple to represent the state, because a tuple can be a key to a dict, while also being 
+        #good for index based access
+        if u'XPos' not in obs or u'ZPos' not in obs:
+            return (-1, -1)
+
+        nearest = 10
+        wall = self.get_wall_position(obs)    # 0 = no wall near, 1 = wall, 2 = corner
         xPos = int(obs[u'XPos'])
         zPos = int(obs[u'ZPos'])
         if "nearest_mob" in obs.keys():
             nearest = self.adjust_dist_granularity(obs["nearest_mob"])
-    #return "{}:{}:{}".format(xPos, zPos, nearest)
-        return "{}".format(nearest)
+
+        #return "{}:{}:{}".format(xPos, zPos, nearest)
+        return (nearest, wall)
+
+
+        #return "{}".format(nearest)
+    def calculate_action_penalty(self, action):
+        
+        return ATK_PENALTY if action == "attack 1" else 0
     
     def act(self, world_state, agent_host, current_r ):
         """take 1 action in response to the current world state"""
         obs_text = world_state.observations[-1].text
         obs = json.loads(obs_text) # most recent observation
         self.logger.debug(obs)
-        
+        self.look(obs)
         current_s = self.calc_state(obs)
-        self.logger.debug("State: %s (x = %.2f, z = %.2f)" % (current_s, float(obs[u'XPos']), float(obs[u'ZPos'])))
+        #self.logger.debug("State: %s (x = %.2f, z = %.2f)" % (current_s, float(obs[u'XPos']), float(obs[u'ZPos'])))
+        info_str = "State: {}   ".format(current_s)
         if current_s not in self.q_table:
             self.q_table[current_s] = ([0] * len(self.actions))
         
@@ -221,11 +319,12 @@ class Agent(object):
         
         #self.drawQ( curr_x = int(obs[u'XPos']), curr_y = int(obs[u'ZPos']) )
         # Select the next action
-        self.look(obs)
+        
         rnd = random.random()
         if rnd < self.epsilon:
             a = random.randint(0, len(self.actions) - 1)
-            self.logger.info("Random action: %s" % self.actions[a])
+            info_str += "Random action: %s" % self.actions[a]
+            
         else:
             m = max(self.q_table[current_s])
             self.logger.debug("Current values: %s" % ",".join(str(x) for x in self.q_table[current_s]))
@@ -235,12 +334,13 @@ class Agent(object):
                     l.append(x)
             y = random.randint(0, len(l)-1)
             a = l[y]
-            self.logger.info("Taking q action: %s" % self.actions[a])
+            info_str += "Taking q action: %s" % self.actions[a]
         
-        
+        self.logger.info(info_str)
         # Try to send the selected action, only update prev_s if this succeeds
         try:
             agent_host.sendCommand(self.actions[a])
+            current_r += self.calculate_action_penalty(self.actions[a])
             self.prev_s = current_s
             self.prev_a = a
         except RuntimeError as e:
@@ -341,7 +441,9 @@ if __name__ == '__main__':
             try:
                 if RECORDING and (i % RECORDING_ITERATIONS == 0):
                     my_mission_record = MalmoPython.MissionRecordSpec("recording_" + str(i) + ".tgz")
-                    my_mission_record.recordMP4(60, 8000000)
+                    my_mission_record.recordCommands()
+                    my_mission_record.recordObservations()
+                    #my_mission_record.recordMP4(60, 8000000)
                     agent.recording = True
                     agent_host.startMission( my_recording_mission, my_mission_record )
                 else:
