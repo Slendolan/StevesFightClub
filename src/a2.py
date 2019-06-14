@@ -21,13 +21,13 @@ RECORDING = True
 RECORDING_ITERATIONS = 10 #slow down a segment every x segments
 TICKS = 10 #how many ms each game tick is
 RECORDING_TICKS = 80 #slows down the game time if we need to record a slower segment
-SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
-RECORDING_SLEEP = RECORDING_TICKS * 0.005
+SLEEP =  TICKS * 0.004 #Time between actions; dependent on game speed
+RECORDING_SLEEP = RECORDING_TICKS * 0.004
 NEAR = 1 #arbitrary number to be adjusted
 NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() calc
 MIDDLE = 2
 MIDDLE *= MIDDLE
-ATK_PENALTY = -2
+ATK_PENALTY = -5
 
 recording_directory = "records/"
 mobs = ["Zombie", "Pig", "Cow"]
@@ -86,7 +86,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <ObservationFromRay/>
                     <ObservationFromDiscreteCell/>
                     <RewardForDamagingEntity>
-                        <Mob type="Zombie" reward="100"/>
+                        <Mob type="Zombie" reward="200"/>
                     </RewardForDamagingEntity>
                     <RewardForSendingCommand reward="-1"/>
                     <MissionQuitCommands quitDescription="no enemies left"/>
@@ -206,6 +206,8 @@ class Agent(object):
                         nearest_dist = dist
                         ob["nearest_mob"] = dist
             if nearest == -1:
+                #quit because no enemies left
+                agent_host.sendCommand("quit")
                 return
 
             e = entities[nearest]
@@ -277,7 +279,13 @@ class Agent(object):
 
         return WALL_FRONT
 
-    
+    def finish_command(self, command):
+        negate_command = ""
+        if command == "attack 1":
+            negate_command = "attack 0"
+        if negate_command:
+            agent_host.sendCommand(negate_command)
+
 
     def calc_state(self, obs):
         #we'll use a tuple to represent the state, because a tuple can be a key to a dict, while also being 
@@ -340,6 +348,7 @@ class Agent(object):
         # Try to send the selected action, only update prev_s if this succeeds
         try:
             agent_host.sendCommand(self.actions[a])
+            self.finish_command(self.actions[a])
             current_r += self.calculate_action_penalty(self.actions[a])
             self.prev_s = current_s
             self.prev_a = a
@@ -425,7 +434,7 @@ if __name__ == '__main__':
         exit(0)
 
     n = 1
-    num_repeats = 200
+    num_repeats = 300
     agent = Agent(iterations = num_repeats)
     my_mission = MalmoPython.MissionSpec(missionXML, True)
     my_recording_mission = MalmoPython.MissionSpec(recordingXML, True)
