@@ -25,6 +25,9 @@ SLEEP =  TICKS * 0.005 #Time between actions; dependent on game speed
 RECORDING_SLEEP = RECORDING_TICKS * 0.005
 NEAR = 2 #arbitrary number to be adjusted
 NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() calc
+MIDDLE = 2
+MIDDLE *= MIDDLE
+ATK_PENALTY = -5
 
 recording_directory = "records/"
 
@@ -86,6 +89,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                       </Grid>
                     </ObservationFromGrid>
                     <ObservationFromRay/>
+                    <ObservationFromDiscreteCell/>
                     <RewardForDamagingEntity>
                         <Mob type="Zombie" reward="200"/>
                     </RewardForDamagingEntity>
@@ -108,6 +112,18 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             </Mission>'''
 missionXML = missionBaseXML.format(tick=TICKS, video='')
 recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='<VideoProducer><Width>1200</Width><Height>720</Height></VideoProducer>')
+
+ENEMY_DIST = 0
+WALL = 1
+ARENA_EDGE = 6
+
+#wall constants
+WALL_NONE = 0
+WALL_CORNER = 1
+WALL_BACK = 2
+WALL_FRONT = 3
+WALL_LEFT = 4
+WALL_RIGHT = 5
 
 
 class Agent(object):
@@ -199,8 +215,9 @@ class Agent(object):
         #if the nearest mob is closer than some arbitrary distance, log that as one state, otherwise use another state
         if dist < NEAR:
             return 0
-        else:
+        elif dist < MIDDLE:
              return 1
+        return 2   
          
     def distance_of_points(self, x1, z1, x2, z2):
         return math.sqrt(math.pow(x1 - x2, 2) + math.pow(z1 - z2, 2))
@@ -218,12 +235,56 @@ class Agent(object):
                 return self.distance_of_points(xPos, zPos, entity["x"], entity["z"])
         return None
 
+    def pos_string_to_tuple(self, pos):
+        #pos format: (x,z)
+        x = ""
+        z = ""
+        i=1
+        while(pos[i] != ','):
+            x += pos[i]
+            i += 1
+        i += 1
+        while(pos[i] != ')'):
+            z += pos[i]
+            i += 1
+        return (int(x), int(z))
+
+
+
+    def get_wall_position(self, obs):
+        #13 by 13 arena, we use blocks, range is 6 to -6 for both x and z blocks
+        to_remove = [',', '(', ')']
+        x_pos, z_pos = self.pos_string_to_tuple(obs['cell'])
+        x_pos = abs(x_pos) #we can set these to absolute value because we have a 0,0 centered arena with walls of the same absolute value position (6)
+        z_pos = abs(z_pos)
+
+        #for a wall or corner at least one of these values must be 6, the edge of the arena
+        if (x_pos != ARENA_EDGE and
+            z_pos != ARENA_EDGE):
+            return WALL_NONE
+        #at this point we know at least 1 of x and z is 6 or -6
+        #all the corners are (6,6) (6,-6) (-6, 6) (-6, -6)
+        #therefore at this point a corner will have equivalent abs(x) and abs(z)
+        if (x_pos == z_pos):
+            return WALL_CORNER
+        #otherwise it's just a wall, determine which direction the wall is based on facing direction
+
+        return WALL_FRONT
+
+    def finish_command(self, command):
+        negate_command = ""
+        if command == "attack 1":
+            negate_command = "attack 0"
+        if negate_command:
+            agent_host.sendCommand(negate_command)
+
     def calc_state(self, obs):
         line_of_sight = False
         #nearest = 10000
         xPos = int(obs[u'XPos'])
         zPos = int(obs[u'ZPos'])
         distance = self.get_nearest_entity(xPos, zPos, obs)
+        position = self.get_wall_position(obs)
         if distance != None:
             distance = self.adjust_dist_granularity(distance)
         if distance != None and u'LineOfSight' in obs and obs[u'LineOfSight']["type"] in mobs:
@@ -231,13 +292,17 @@ class Agent(object):
         life = 2
         if obs[u'Life'] < 10:
             life = 1
-        return (distance, line_of_sight, life)
+        return (distance, position, line_of_sight, life)
         '''
         if "nearest_mob" in obs.keys():
             nearest = self.adjust_dist_granularity(obs["nearest_mob"])
     #return "{}:{}:{}".format(xPos, zPos, nearest)
     '''
         #return "{}".format(nearest)
+        
+    def calculate_action_penalty(self, action):
+        
+        return ATK_PENALTY if action == "attack 1" else 0
     
     def act(self, world_state, agent_host, current_r ):
         """take 1 action in response to the current world state"""
@@ -281,6 +346,8 @@ class Agent(object):
         # Try to send the selected action, only update prev_s if this succeeds
         try:
             agent_host.sendCommand(self.actions[a])
+            self.finish_command(self.actions[a])
+            current_r += self.calculate_action_penalty(self.actions[a])
             self.prev_s = current_s
             self.prev_a = a
         except RuntimeError as e:
