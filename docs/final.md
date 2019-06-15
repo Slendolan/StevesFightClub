@@ -19,7 +19,8 @@ Later, we implemented tabular Q-learning for our agent because it would help our
 We tried to store states as a string representing coordinates of the agent and enemies, but the results were appalling (see results in Figure 1). 
 
 **Environment**
-<img src="img/initial_spawn.png" width="250" height="250">
+
+<img src="img/final_spawn.png" width="250" height="250">
 
 Initially, we had two enemies in the arena. The agent learned it didn't need to move and repeatedly spam attacks. In our final version, we improved our state space to get better movement.  In order to test these changes, we decided to increase the number of enemies to 3. In our previous version, the agent would die repeatedly as it tried to stay at one position and spam attacks on 3 enemies. This was simply because the 3 zombies would outdamage Steve's health bar before Steve was able to kill all 3 enemies. The states space discussed below describes the movement changes that helps Steve survive.
 
