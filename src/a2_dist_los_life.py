@@ -1,5 +1,5 @@
 '''
-StevesFightClub Version 2
+StevesFightClub Version 3
 The agent can move and will attack anything that gets close.
 Malmo Python examples used: tutorial_2.py, hit_test.py
 '''
@@ -28,6 +28,7 @@ NEAR *= NEAR #distance is kept as the square of the true distance, no sqrt() cal
 MIDDLE = 2
 MIDDLE *= MIDDLE
 ATK_PENALTY = -5
+OUTPUT_TO_FILE = True
 
 recording_directory = "records/"
 
@@ -50,7 +51,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 <ServerInitialConditions>
                     <Time>
                         <StartTime>18000</StartTime>
-                        <AllowPassageOfTime>false</AllowPassageOfTime>
+                        <AllowPassageOfTime>true</AllowPassageOfTime>
                     </Time>
                 <AllowSpawning> false </AllowSpawning>
                 </ServerInitialConditions>
@@ -99,6 +100,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <Reward description="out_of_time" reward="-5" />
                         <Reward description="quit" reward="1000" />
                     </RewardForMissionEnd>
+                    <ChatCommands/>
                     {video}
                     
                     
@@ -206,7 +208,7 @@ class Agent(object):
         y = 0
         if u'entities' in obs:
             for x in obs["entities"]:
-                if x in mobs:
+                if x['name'] in mobs:
                     y += 1
             if y == 0:    
                 agent_host.sendCommand("quit")
@@ -309,6 +311,8 @@ class Agent(object):
         obs_text = world_state.observations[-1].text
         obs = json.loads(obs_text) # most recent observation
         self.logger.debug(obs)
+        if obs["WorldTime"] > 18100:
+            self.alone(obs)
         
         current_s = self.calc_state(obs)
         info_str = "State: {}   ".format(current_s)
@@ -477,7 +481,7 @@ if __name__ == '__main__':
         print("Mission running ", end=' ')
         
         # List of mobs to attack
-        mobs = ["Zombie", "Pig", "Cow"]
+        mobs = ["Zombie", "Pig", "Cow", "Spider", "Creeper"]
         health_lost = 0
         damage_dealt = 0
         
@@ -492,5 +496,11 @@ if __name__ == '__main__':
     print()
     print("Mission ended")
     print(cumulative_rewards)
+    
+    if OUTPUT_TO_FILE:
+        with open("bot_rewards.txt", "w+") as f:
+            for x in cumulative_rewards:
+                f.write("%s\n" % x)
+            
     # Mission has ended.
 
