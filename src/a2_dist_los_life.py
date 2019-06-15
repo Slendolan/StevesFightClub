@@ -17,7 +17,7 @@ import random
 import math
 import logging
 
-RECORDING = False
+RECORDING = True
 RECORDING_ITERATIONS = 10 #slow down a segment every x segments
 TICKS = 10 #how many ms each game tick is
 RECORDING_TICKS = 80 #slows down the game time if we need to record a slower segment
@@ -62,10 +62,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <DrawCuboid x1="-10" y1="4" z1="-10" x2="10" y2="6" z2="10" type="glowstone"/>
                         <DrawCuboid x1="-20" y1="10" z1="-20" x2="20" y2="10" z2="10" type="glowstone"/>
                         <DrawCuboid x1="-6" y1="4" z1="-6" x2="6" y2="7" z2="6" type="air"/>
-                        
-                        <DrawEntity x="0" y="7" z="3" type="Zombie"/>
-                        <DrawEntity x="0" y="7" z="3" type="Zombie"/>
-                        <DrawEntity x="2" y="7" z="3" type="Zombie"/>
+                        {enemies}
                     </DrawingDecorator>
                   
                   <ServerQuitFromTimeUp timeLimitMs="50000"/>
@@ -76,7 +73,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
               <AgentSection mode="Survival">
                 <Name>Berserker</Name>
                 <AgentStart>
-                    <Placement x="0" y="7" z="0" pitch="10"/>
+                    <Placement x="0" y="7" z="0" pitch="{pitch}"/>
                     <Inventory>
                         <InventoryItem slot="0" type="stone_sword"/>
                     </Inventory>
@@ -93,6 +90,7 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                     <ObservationFromDiscreteCell/>
                     <RewardForDamagingEntity>
                         <Mob type="Zombie" reward="200"/>
+                        <Mob type="Spider" reward="200"/>
                     </RewardForDamagingEntity>
                     <RewardForSendingCommand reward="-1"/>
                     <MissionQuitCommands quitDescription="no enemies left"/>
@@ -101,7 +99,6 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                         <Reward description="quit" reward="1000" />
                     </RewardForMissionEnd>
                     <ChatCommands/>
-                    {video}
                     
                     
                     <ObservationFromNearbyEntities>
@@ -112,8 +109,25 @@ missionBaseXML =  '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
                 </AgentHandlers>
               </AgentSection>
             </Mission>'''
-missionXML = missionBaseXML.format(tick=TICKS, video='')
-recordingXML = missionBaseXML.format(tick=RECORDING_TICKS, video='<VideoProducer><Width>1200</Width><Height>720</Height></VideoProducer>')
+
+zombieMissionXML = missionBaseXML.format(tick='{tick}', 
+                                         enemies="""
+                                         <DrawEntity x="0" y="7" z="3" type="Zombie"/>
+                                         <DrawEntity x="0" y="7" z="3" type="Zombie"/>
+                                         <DrawEntity x="2" y="7" z="3" type="Zombie"/>
+                                         """,
+                                         pitch="10")
+
+spiderMissionXML = missionBaseXML.format(tick='{tick}', 
+                                         enemies="""
+                                        <DrawEntity x="0" y="7" z="3" type="Spider"/>
+                                        <DrawEntity x="2" y="7" z="3" type="Spider"/>
+                                         """,
+                                         pitch="25")
+
+missionXML = spiderMissionXML ##CHANGE MISSION HERE
+recordingXML = missionXML.format(tick=RECORDING_TICKS)
+missionXML = missionXML.format(tick=TICKS)
 
 ENEMY_DIST = 0
 WALL = 1
@@ -144,7 +158,7 @@ class Agent(object):
         self.logger.handlers = []
         self.logger.addHandler(logging.StreamHandler(sys.stdout))
         
-        self.actions = ["attack 1", "move -0.5", "move 0.5", "strafe -0.5", "strafe 0.5"]
+        self.actions = ["attack 1", "attack 1", "move -0.5", "move 0.5", "strafe -0.5", "strafe 0.5"]
         self.q_table = {}
         self.canvas = None
         self.root = None
@@ -173,18 +187,24 @@ class Agent(object):
         # Get our position/orientation:
         if u'Yaw' in ob:
             current_yaw = ob[u'Yaw']
+        else: 
+            return
         if u'XPos' in ob:
             self_x = ob[u'XPos']
+        else:
+            return
         if u'ZPos' in ob:
             self_z = ob[u'ZPos']
+        else:
+            return
         
         # Use the nearby-entities observation to decide which way to move:
         if u'entities' in ob:
             entities = ob["entities"]
             x_pull = 0
             z_pull = 0
-            i = 0
             ob["nearest_mob"] = 100000
+            """
             for e in entities:
                 i += 1
                 if e["name"] in mobs:
@@ -193,6 +213,28 @@ class Agent(object):
                     z_pull += (e["z"] - self_z)/dist
                     #Attaching nearest mob calculation to the look calculation for simplicity
                     ob["nearest_mob"] = min(ob["nearest_mob"], dist)
+            """
+            ## trying turning to only the nearest enemy
+            nearest = -1
+            nearest_dist = 10000
+            for i in range(len(entities)):
+                e = entities[i]
+                if e["name"] in mobs:
+                    dist = max(0.0001, (e["x"] - self_x) * (e["x"] - self_x) + (e["z"] - self_z) * (e["z"] - self_z))
+                    if dist < nearest_dist:
+                        nearest = i
+                        nearest_dist = dist
+                        ob["nearest_mob"] = dist
+            if ob["WorldTime"] > 18010 and nearest == -1:
+                #quit because no enemies left
+                agent_host.sendCommand("quit")
+                return
+
+            e = entities[nearest]
+            x_pull = (e["x"] - self_x)/nearest_dist
+            z_pull = (e["z"] - self_z)/nearest_dist
+
+
             # Determine the direction we need to turn:
             yaw = -180 * math.atan2(x_pull, z_pull) / math.pi
             difference = yaw - current_yaw;
@@ -310,8 +352,8 @@ class Agent(object):
         """take 1 action in response to the current world state"""
         obs_text = world_state.observations[-1].text
         obs = json.loads(obs_text) # most recent observation
-        self.logger.debug(obs)
-        if obs["WorldTime"] > 18100:
+        
+        if obs["WorldTime"] > 18010:
             self.alone(obs)
         
         current_s = self.calc_state(obs)
@@ -332,7 +374,8 @@ class Agent(object):
         rnd = random.random()
         if rnd < self.epsilon:
             a = random.randint(0, len(self.actions) - 1)
-            self.logger.info("Random action: %s" % self.actions[a])
+            info_str += "Random action: %s" % self.actions[a]
+            #self.logger.info("Random action: %s" % self.actions[a])
         else:
             m = max(self.q_table[current_s])
             self.logger.debug("Current values: %s" % ",".join(str(x) for x in self.q_table[current_s]))
@@ -344,9 +387,9 @@ class Agent(object):
             a = l[y]
             
             info_str += "Taking q action: %s" % self.actions[a]
-            self.logger.info(info_str)
+            
         
-        
+        self.logger.info(info_str)
         # Try to send the selected action, only update prev_s if this succeeds
         try:
             agent_host.sendCommand(self.actions[a])
