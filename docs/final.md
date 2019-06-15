@@ -37,7 +37,7 @@ For our final approach, we kept the use of Q-tables and changed what kind of sta
 We tried to implement shields for our agent to use, but Malmo's inventory items does not seem to have a way to equip something to the off-hand slot when the mission starts. It was unsuitable for the agent to swap to the shield, block an attack, then swap back to the sword, especially when the enemy was right next to the agent. 
 
 
-#### States
+**States**
 
 
 In our initial states, we stored x and z coordinates, but we decided that it would be better to store positions, such as being near the wall or the corner of the arena. This turned out to not be enough, because the agent had no information about the direction it was facing in relation to the wall or corner.  So if it would learn a certain response to being near a wall, say to move left away from the wall, if it encountered a wall to the left in another instance and needs to move right to get away and fails, it would quickly unlearn that response.  
@@ -56,10 +56,6 @@ We also found that the line of sight update function was tied to our agent actio
 Our agent had no information about the arena boundaries, so when it backed itself into a corner, it would not be able to retreat anymore and not know the reason for dying. 
 
 
-
-## Evaluation
-
-
 **Actions**
 - attack
 - move forward
@@ -75,7 +71,10 @@ Our agent had no information about the arena boundaries, so when it backed itsel
 - -5 for running out of time
 - -1 for any action
 
-Compared to our previous rewards, we added a penalty to reduce the agent's spamming of attacks, especially when enemies are not in range. 
+In the final version, several rewards were modified to fit the changes to our state space. We added an attack penalty to reduce the agent's spamming of attacks. This removes missed attacks the agent would do in cases such that an enemy was out of range or not in the line of sight. Since we added additional states for movement, the agent was moving more often which made it attack less. This coupled with the attack penalty made the agent rarely attack enemies, but instead outrunning them. This happened frequently in earlier iterations, so we increased the reward for damaging the enemy which incentivised the agent to attack whenever it was able to ensure a hit.
+
+
+## Evaluation
 
 <img>
 Figure 1: States are stored as a string containing 0 (empty space), 1 (agent), or 2 (enemy)
