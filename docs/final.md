@@ -22,7 +22,7 @@ We tried to store states as a string representing coordinates of the agent and e
 
 <img src="img/final_spawn.png" width="250" height="250">
 
-Initially, we had two enemies in the arena. The agent learned it didn't need to move and repeatedly spam attacks. In our final version, we improved our state space to get better movement.  In order to test these changes, we decided to increase the number of enemies to 3. In our previous version, the agent would die repeatedly as it tried to stay at one position and spam attacks on 3 enemies. This was simply because the 3 zombies would outdamage Steve's health bar before Steve was able to kill all 3 enemies. The states space discussed below describes the movement changes that helps Steve survive.
+Initially, we had two enemies in the arena. The agent learned it didn't need to move and repeatedly spam attacks. In our final version, we improved our state space to get better movement.  In order to test these changes, we decided to increase the number of enemies to 3. In our previous version, the agent would die repeatedly as it tried to stay at one position and spam attacks on 3 enemies. This was simply because the 3 zombies would outdamage the agent's health bar before the agent was able to kill all 3 enemies. The states space discussed below describes the movement changes that helps the agent survive.
 
 
 **Learning Algorithm**
@@ -59,7 +59,7 @@ In the end we chose to go with the first option, the reasoning being that not on
 We also found that the line of sight update function was tied to our agent action tick rate.  What this resulted in was that sometimes the agent would not be facing a zombie and would still choose to attack. Rather than changing our line of sight function to work outside of the agent tick rate, we instead opted to make the agent more complex by introducing another state based on whether a zombie was in range to attack or not. Since this was based on the ray observations from Malmo's API, we could easily make a function to calculate the state and be confident in the results.  Thus the aim is to have the agent not attack if enemies are not in range. 
 
 
-Our agent had no information about the arena boundaries, so when it backed itself into a corner, it would not be able to retreat anymore and not know the reason for dying. 
+Our last state change was health status. The idea was that we wanted the agent to retreat when it was in low health condition, otherwise it would move towards the enemy for the attack opportunity. The agent had 20 health bars, which is too much considering we have already the position and line of sight had increased our state space greatly. Therefore we opted to use only 2 states for health status: low (<10 bars) and high health (>= 10 bars). We wanted to give some idea of its health to the agent, but in some simplified way. We chose to simplify this because the agent's death would often happen near walls. With this simplification, we thought the agent's movement would be more influenced by the wall states than the health state.
 
 
 **Actions**
