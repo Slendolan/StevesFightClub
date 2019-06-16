@@ -6,9 +6,14 @@ title: Final Report
 ## Video
 
 
+[![Video Link](http://img.youtube.com/watch?v=_aAcyVQRYUA/0.jpg)](https://www.youtube.com/watch?v=_aAcyVQRYUA)
+
+
 ## Project Summary
 
-The goal of StevesFightClub is to create an agent that is able to fight and defeat all sorts of Minecraft mobs.  With 50 seconds, the agent only uses a stone sword to fight up to 3 enemies in a 13x13 block arena.
+The goal of StevesFightClub is to create an agent that is able to fight and defeat all sorts of Minecraft mobs.  The agent fights up to 3 enemies in a 13x13 enclosed arena. The time limit was increased to 50 seconds to acommodate for increase in enemies. We initially wanted to make a wide arena with no bounds, but that would be too trivial since the agent would retreat indefinitely. We chose to make the arena as small as possible to confine the agent into making the best choices possible in a constrained environment.
+
+Our final version focuses primarily on improved movement. We added several new states and modifications to rewards for this to happen. These changes are discussed in the states and rewards approach section of this report.
 
 
 ## Approaches
@@ -59,7 +64,7 @@ In the end we chose to go with the first option, the reasoning being that not on
 We also found that the line of sight update function was tied to our agent action tick rate.  What this resulted in was that sometimes the agent would not be facing a zombie and would still choose to attack. Rather than changing our line of sight function to work outside of the agent tick rate, we instead opted to make the agent more complex by introducing another state based on whether a zombie was in range to attack or not. Since this was based on the ray observations from Malmo's API, we could easily make a function to calculate the state and be confident in the results.  Thus the aim is to have the agent not attack if enemies are not in range. 
 
 
-Our last state change was health status. The idea was that we wanted the agent to retreat when it was in low health condition, otherwise it would move towards the enemy for the attack opportunity. The agent had 20 health bars, which is too much considering we have already the position and line of sight had increased our state space greatly. Therefore we opted to use only 2 states for health status: low (<10 bars) and high health (>= 10 bars). We wanted to give some idea of its health to the agent, but in some simplified way. We chose to simplify this because the agent's death would often happen near walls. With this simplification, we thought the agent's movement would be more influenced by the wall states than the health state.
+Our last state addition was health status. The idea was that we wanted the agent to retreat when it was in low health condition, otherwise it would move towards the enemy for the attack opportunity. The agent had 20 health bars, which is too large to add to our state space considering we added the position and line of sight states. Therefore we opted to use only 2 states for health status: low (<10 bars) and high health (>= 10 bars). We wanted to give some idea of its health to the agent, but in some simplified way. We chose to simplify this because the agent's death would often happen near walls. With this simplification, we thought the agent's movement would be more influenced by the wall states than the health state.
 
 
 **Actions**
