@@ -109,7 +109,7 @@ In general, this is an approximation of how the agent performed:
 A stone sword deals 5 damage and zombies have 20 health points. It will take 4 attacks (or 800 reward points) to defeat one enemy. 
 
 
-
+In Figure 2, at around 175 iterations, the agent was able to navigate intelligently around the map and attack only when it was guranteed a hit on an enemy. From observations of its later iterations, the agent would retreat quite often, but it would not be a full retreat. It would back away but also strafe left/right in a circular motion. This greatly reduces the chance of the agent backing up into a corner and getting surrounded by zombies. Additionally, if the agent were to be stuck in the corner, it was very aggressive in its attack, such that it would focus and kill an enemy and take the opportunity to get out of the corner. With this observation, we are confident that the improvements to the movement fixed this cornering challenge we faced in our previous status version.
 
 
 ## References
