@@ -74,6 +74,9 @@ Our last state addition was health status. The idea was that we wanted the agent
 - move right
 - move back
 
+In the final version, we changed the way attack worked. Previously agent recieved an attack 1 command, it would attack continuously for some threshold. However, we changed the attack so it would attack once and only once per attack command issued. Attacking also has doubled the weight compared to the movement actions. We wanted the agent to take more random attacks, which would prioritize the agent into attacking than moving in earlier iterations. This was to help it learn attacking first since it was the most important action for the agent to reach its goal.
+
+
 **Rewards**
 - -1000 for agent death
 - +1000 for defeating all enemies
