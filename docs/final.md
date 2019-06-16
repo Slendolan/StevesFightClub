@@ -90,10 +90,12 @@ In the final version, several rewards were modified to fit the changes to our st
 
 ## Evaluation
 
-<img>
+<img src="img/final_fig1.png">
+
 Figure 1: States are stored as a string containing 0 (empty space), 1 (agent), or 2 (enemy)
 
-<img>
+<img src="img/final_fig2.png">
+
 Figure 2: Our final implementation
 
 As seen from figure 2, the agent mostly got a negative cumulative reward before 100 iterations. After 100 iterations, the agent would get an average of 1000 points.
