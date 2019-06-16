@@ -88,6 +88,9 @@ In the final version, we changed the way attack worked. Previously agent recieve
 In the final version, several rewards were modified to fit the changes to our state space. We added an attack penalty to reduce the agent's spamming of attacks. This removes missed attacks the agent would do in cases such that an enemy was out of range or not in the line of sight. Since we added additional states for movement, the agent was moving more often which made it attack less. This coupled with the attack penalty made the agent rarely attack enemies, but instead outrunning them. This happened frequently in earlier iterations, so we increased the reward for damaging the enemy which incentivised the agent to attack whenever it was able to ensure a hit.
 
 
+We decided to replace zombies with spiders to test our model with a different mob. We initially had an aiming problem with spiders. The agent's aim focuses on the middle of the entity. However for spiders, the hitbox is really low. When spiders approached the agent, the agent was not able to get line of sight of the spider since it would aim above the spider's hitbox. We made some adjustments to lower the aiming yaw so it would look down at the spider. It was not perfect, but it was able to get line of sight of the spider more often and thus was able to complete the mission.
+
+
 ## Evaluation
 
 <img src="img/final_fig1.png">
